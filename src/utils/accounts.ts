@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { accountSpotify, months } from "../data/database";
 const charlist = "abcdefghijklmnopqrstuvwxyz1234567890"
 const gender = ['m', 'f', 'x']
 const mails = fs.readFileSync(path.join(__dirname, "../../data/mails.txt")).toString('ascii');
@@ -10,13 +11,15 @@ const
 
 export function createAccount(){
     let gen : "m"|"f"|"x" = < "m"|"f"|"x">gender[Math.floor(Math.random()*gender.length)]
-    return {
+    let m : accountSpotify ={
         gender: gen,
-        mail: mailsArray.pop(),
+        //mail: mailsArray.pop(),
         username: usernamesArray[Math.floor(Math.random()*usernamesArray.length)],
         password: randomString(),
-        birthday: randomDate(new Date(1950,1,1), new Date(2005, 12,31))
+        birthday: randomDate(new Date(1950,1,1), new Date(2005, 12,31)),
+        verified: false
     }
+    return m;
 }
 
 export function getRandomUsername(){
@@ -42,7 +45,7 @@ export function randomDate(start : Date, end : Date) {
     let m = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
     return {
         year: m.getFullYear(),
-        month: month[m.getMonth()],
+        month: <months>month[m.getMonth()],
         day: m.getDay()+1
     };
 }

@@ -13,13 +13,15 @@ var usernames = fs_1.default.readFileSync(path_1.default.join(__dirname, "../../
 var mailsArray = mails.split(/\r?\n\r?/g), usernamesArray = usernames.split(/\r?\n\r?/g);
 function createAccount() {
     var gen = gender[Math.floor(Math.random() * gender.length)];
-    return {
+    var m = {
         gender: gen,
-        mail: mailsArray.pop(),
+        //mail: mailsArray.pop(),
         username: usernamesArray[Math.floor(Math.random() * usernamesArray.length)],
         password: randomString(),
-        birthday: randomDate(new Date(1950, 1, 1), new Date(2005, 12, 31))
+        birthday: randomDate(new Date(1950, 1, 1), new Date(2005, 12, 31)),
+        verified: false
     };
+    return m;
 }
 exports.createAccount = createAccount;
 function getRandomUsername() {

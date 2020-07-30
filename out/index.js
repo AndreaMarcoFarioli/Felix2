@@ -62,12 +62,14 @@ var worker_threads_1 = require("worker_threads");
 var anticaptcha_1 = require("anticaptcha");
 var path_1 = require("path");
 var mongodb_1 = require("mongodb");
+var database_1 = require("./data/database");
 var worker;
 var driver;
 var db;
 var country = "us";
 function start() {
     return __awaiter(this, void 0, void 0, function () {
+        // start_vpn();
         function start_vpn() {
             worker = new worker_threads_1.Worker(path_1.join(__dirname, "thread/vpn_thread.js"), { workerData: {
                     country: country
@@ -82,18 +84,20 @@ function start() {
         var mongo, dbo, accountDB, account;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0:
+                case 0: return [4 /*yield*/, database_1.connect()];
+                case 1:
+                    _a.sent();
                     mongo = new mongodb_1.MongoClient("mongodb+srv://admin:admin@cluster0.vlznh.mongodb.net/userlist?retryWrites=true&w=majority");
                     return [4 /*yield*/, mongo.connect()];
-                case 1:
-                    dbo = _a.sent();
-                    db = dbo.db("accounts_list");
-                    return [4 /*yield*/, db.collection("userlist").findOne({ spotify: { $exists: false } })];
                 case 2:
+                    dbo = _a.sent();
+                    db = dbo.db("kebotdb");
+                    return [4 /*yield*/, database_1.findNotRegisterAccount()];
+                case 3:
                     accountDB = _a.sent();
                     console.log(accountDB);
                     account = accounts_1.createAccount();
-                    start_vpn();
+                    executor(account, accountDB);
                     return [2 /*return*/];
             }
         });
@@ -105,7 +109,8 @@ function executor(account, accountDB) {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    if (!(account.mail && account.username)) return [3 /*break*/, 33];
+                    if (!accountDB) return [3 /*break*/, 37];
+                    if (!account.username) return [3 /*break*/, 37];
                     return [4 /*yield*/, new selenium_webdriver_1.Builder().forBrowser("chrome").build()];
                 case 1:
                     driver = _a.sent();
@@ -160,46 +165,54 @@ function executor(account, accountDB) {
                     return [4 /*yield*/, driver.findElement(structure_1.default.genders[account.gender])];
                 case 18:
                     tmpElem = _a.sent();
-                    tmpElem.click();
-                    return [4 /*yield*/, driver.findElement(structure_1.default.newsletter)];
+                    return [4 /*yield*/, tmpElem.click()];
                 case 19:
-                    tmpElem = _a.sent();
-                    tmpElem.click();
-                    return [4 /*yield*/, driver.findElement(structure_1.default.share_data)];
+                    _a.sent();
+                    return [4 /*yield*/, driver.findElement(structure_1.default.newsletter)];
                 case 20:
                     tmpElem = _a.sent();
-                    tmpElem.click();
-                    return [4 /*yield*/, driver.findElement(structure_1.default.privacy)];
+                    return [4 /*yield*/, tmpElem.click()];
                 case 21:
+                    _a.sent();
+                    return [4 /*yield*/, driver.findElement(structure_1.default.share_data)];
+                case 22:
                     tmpElem = _a.sent();
-                    tmpElem.click();
+                    return [4 /*yield*/, tmpElem.click()];
+                case 23:
+                    _a.sent();
+                    return [4 /*yield*/, driver.findElement(structure_1.default.privacy)];
+                case 24:
+                    tmpElem = _a.sent();
+                    return [4 /*yield*/, tmpElem.click()];
+                case 25:
+                    _a.sent();
                     sleep(4000);
                     return [4 /*yield*/, captchaSolver()];
-                case 22:
+                case 26:
                     res = _a.sent();
                     //await driver.executeScript(`document.querySelector("iframe").remove()`);
                     sleep(4000);
                     return [4 /*yield*/, driver.findElement(structure_1.default.captcha.recaptcha_response)];
-                case 23:
+                case 27:
                     tmpElem = _a.sent();
                     return [4 /*yield*/, driver.executeScript("arguments[0].innerHTML = arguments[1]", tmpElem, res.solution.gRecaptchaResponse)];
-                case 24:
+                case 28:
                     _a.sent();
                     return [4 /*yield*/, driver.findElement(selenium_webdriver_1.By.css('[name=\'recaptchaV2\']'))];
-                case 25:
+                case 29:
                     tmpElem = _a.sent();
                     return [4 /*yield*/, driver.executeScript("arguments[0].removeAttribute(\"hidden\")", tmpElem)];
-                case 26:
+                case 30:
                     _a.sent();
                     sleep(3000);
                     return [4 /*yield*/, tmpElem.sendKeys(res.solution.gRecaptchaResponse)];
-                case 27:
+                case 31:
                     _a.sent();
                     return [4 /*yield*/, driver.findElement(structure_1.default.submit)];
-                case 28:
+                case 32:
                     tmpElem = _a.sent();
                     return [4 /*yield*/, tmpElem.click()];
-                case 29:
+                case 33:
                     _a.sent();
                     notDid_1 = false;
                     return [4 /*yield*/, new Promise(function (res) {
@@ -211,21 +224,20 @@ function executor(account, accountDB) {
                                 res();
                             });
                         })];
-                case 30:
+                case 34:
                     _a.sent();
                     if (!notDid_1)
                         console.log(account);
-                    delete account.mail;
                     account.country = country;
-                    return [4 /*yield*/, db.collection("userlist").updateOne({ _id: new mongodb_1.ObjectID(accountDB._id) }, { $set: { spotify: account } })];
-                case 31:
+                    return [4 /*yield*/, database_1.addAccount(account, new mongodb_1.ObjectID(accountDB._id))];
+                case 35:
                     _a.sent();
                     sleep(7000);
                     return [4 /*yield*/, driver.close()];
-                case 32:
+                case 36:
                     _a.sent();
-                    _a.label = 33;
-                case 33: return [2 /*return*/];
+                    _a.label = 37;
+                case 37: return [2 /*return*/];
             }
         });
     });
@@ -248,7 +260,7 @@ function captchaSolver() {
                                     case 0: return [4 /*yield*/, a.createTask(structure_1.captchaObjectSpotify)];
                                     case 1:
                                         taskID = _a.sent();
-                                        a.getTaskResult(taskID, 20, 20).then(res).catch(function () {
+                                        a.getTaskResult(taskID).then(res).catch(function () {
                                         });
                                         return [2 /*return*/];
                                 }

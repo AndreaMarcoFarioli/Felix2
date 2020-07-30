@@ -28,6 +28,17 @@ export async function addAccount(account: accountSpotify, _id: ObjectID) {
                 });
 }
 
+export async function inUseAccount(_id: ObjectID, inUse: boolean = true) {
+    if (!connected)
+        return;
+    return await
+        dbo.collection("accounts")
+            .updateOne(
+                { _id: _id },
+                { $set: { inUse: inUse } }
+            )
+}
+
 export async function findNotRegisterAccount() {
     if (!connected)
         return;
@@ -38,8 +49,8 @@ export async function findNotRegisterAccount() {
                     { activated: true },
                     {
                         $or: [
-                            {subs: {$exists: false}},
-                            {subs: {spotify: {$exists: false}}}
+                            { subs: { $exists: false } },
+                            { subs: { spotify: { $exists: false } } }
                         ]
                     }
                 ]

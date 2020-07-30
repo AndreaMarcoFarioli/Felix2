@@ -1,0 +1,23 @@
+{
+  "name": "Felix2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "tsc && node --experimental-worker out/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/mongodb": "^3.5.25",
+    "@types/node": "^14.0.27",
+    "@types/selenium-webdriver": "^4.0.9",
+    "anticaptcha": "^2.0.3",
+    "mongodb": "^3.5.9",
+    "selenium-webdriver": "^4.0.0-alpha.7"
+  },
+  "devDependencies": {
+    "typescript": "^3.9.7"
+  }
+}

@@ -69,16 +69,41 @@ var db;
 var country = "us";
 function start() {
     return __awaiter(this, void 0, void 0, function () {
-        // start_vpn();
         function start_vpn() {
-            worker = new worker_threads_1.Worker(path_1.join(__dirname, "thread/vpn_thread.js"), { workerData: {
-                    country: country
-                } });
-            worker.once("message", function (message) {
-                if (message === "start")
-                    executor(account, accountDB);
-                else if (message === "refresh")
-                    start_vpn();
+            return __awaiter(this, void 0, void 0, function () {
+                var continue_;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            worker = new worker_threads_1.Worker(path_1.join(__dirname, "thread/vpn_thread.js"), {
+                                workerData: {
+                                    country: country
+                                }
+                            });
+                            continue_ = false;
+                            return [4 /*yield*/, new Promise(function (res) {
+                                    worker.once("message", function (message) {
+                                        if (message === "start")
+                                            continue_ = true;
+                                        else if (message === "refresh")
+                                            continue_ = false;
+                                        res();
+                                    });
+                                })];
+                        case 1:
+                            _a.sent();
+                            if (!continue_) return [3 /*break*/, 3];
+                            return [4 /*yield*/, executor(account, accountDB)];
+                        case 2:
+                            _a.sent();
+                            return [3 /*break*/, 5];
+                        case 3: return [4 /*yield*/, start_vpn()];
+                        case 4:
+                            _a.sent();
+                            _a.label = 5;
+                        case 5: return [2 /*return*/];
+                    }
+                });
             });
         }
         var mongo, dbo, accountDB, account;
@@ -97,7 +122,10 @@ function start() {
                     accountDB = _a.sent();
                     console.log(accountDB);
                     account = accounts_1.createAccount();
-                    executor(account, accountDB);
+                    return [4 /*yield*/, start_vpn()];
+                case 4:
+                    _a.sent();
+                    process.exit();
                     return [2 /*return*/];
             }
         });
@@ -105,7 +133,8 @@ function start() {
 }
 function executor(account, accountDB) {
     return __awaiter(this, void 0, void 0, function () {
-        var tmpElem, res, notDid_1;
+        var tmpElem, out, res, notDid_1;
+        var _this = this;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -187,9 +216,21 @@ function executor(account, accountDB) {
                 case 25:
                     _a.sent();
                     sleep(4000);
+                    out = setTimeout(function () { return __awaiter(_this, void 0, void 0, function () {
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0: return [4 /*yield*/, driver.close()];
+                                case 1:
+                                    _a.sent();
+                                    process.exit();
+                                    return [2 /*return*/];
+                            }
+                        });
+                    }); }, 120000);
                     return [4 /*yield*/, captchaSolver()];
                 case 26:
                     res = _a.sent();
+                    clearTimeout(out);
                     //await driver.executeScript(`document.querySelector("iframe").remove()`);
                     sleep(4000);
                     return [4 /*yield*/, driver.findElement(structure_1.default.captcha.recaptcha_response)];
@@ -232,10 +273,12 @@ function executor(account, accountDB) {
                     return [4 /*yield*/, database_1.addAccount(account, new mongodb_1.ObjectID(accountDB._id))];
                 case 35:
                     _a.sent();
-                    sleep(7000);
+                    sleep(3500);
                     return [4 /*yield*/, driver.close()];
                 case 36:
                     _a.sent();
+                    if (worker)
+                        worker.postMessage("exit");
                     _a.label = 37;
                 case 37: return [2 /*return*/];
             }

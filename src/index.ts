@@ -20,22 +20,29 @@ async function start() {
     let accountDB = await findNotRegisterAccount();
     console.log(accountDB);
     let account = createAccount();
-    // start_vpn();
-    function start_vpn() {
+    await start_vpn();
+    async function start_vpn() {
         worker = new Worker(join(__dirname, "thread/vpn_thread.js"), {
             workerData: {
                 country: country
             }
         });
-        worker.once("message", (message) => {
-            if (message === "start")
-                executor(account, accountDB);
-            else if (message === "refresh")
-                start_vpn();
-        })
+        let continue_ = false;
+        await new Promise(res => {
+            worker.once("message", (message) => {
+                if (message === "start")
+                    continue_ = true;
+                else if (message === "refresh")
+                    continue_ = false;
+                res();
+            })
+        });
+        if (continue_) {
+            await executor(account, accountDB);
+        }else await start_vpn();
     }
-    await executor(account, accountDB);
-    start();
+    process.exit()
+    //await executor(account, accountDB);
 }
 
 
@@ -68,7 +75,12 @@ async function executor(account: accountSpotify, accountDB: account | undefined)
             tmpElem = await driver.findElement(structure.privacy);
             await tmpElem.click();
             sleep(4000)
+            let out = setTimeout(async ()=>{
+                await driver.close();
+                process.exit();
+            }, 120000);
             let res = await captchaSolver();
+            clearTimeout(out);
             //await driver.executeScript(`document.querySelector("iframe").remove()`);
             sleep(4000)
 
@@ -96,8 +108,8 @@ async function executor(account: accountSpotify, accountDB: account | undefined)
             await addAccount(account, new ObjectID(accountDB._id));
             sleep(3500);
             await driver.close();
-            if(worker)
-            worker.postMessage("exit");
+            if (worker)
+                worker.postMessage("exit");
         }
 }
 

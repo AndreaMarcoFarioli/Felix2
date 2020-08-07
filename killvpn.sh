@@ -1,0 +1,1 @@
+echo Benzoni1930 | sudo -S killall openvpn

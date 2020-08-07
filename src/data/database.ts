@@ -39,6 +39,17 @@ export async function inUseAccount(_id: ObjectID, inUse: boolean = true) {
             )
 }
 
+export async function setReal(_id: ObjectID, real: string){
+    if(!connected)
+        return
+    return await
+        dbo.collection("accounts")
+            .updateOne(
+                { _id: _id },
+                { $set: { "subs.spotify.realCountry": real } }
+            )
+}
+
 export async function findNotRegisterAccount() {
     if (!connected)
         return;
@@ -64,7 +75,8 @@ export type accountSpotify = {
     password: string,
     gender: gender,
     birthday: date
-    verified: boolean
+    verified: boolean,
+    changedCountry?: string
 };
 
 export type account = {

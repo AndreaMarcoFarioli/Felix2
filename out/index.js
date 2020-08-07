@@ -60,18 +60,19 @@ var accounts_1 = require("./utils/accounts");
 var structure_1 = __importStar(require("./configuration/structure"));
 var worker_threads_1 = require("worker_threads");
 var anticaptcha_1 = require("anticaptcha");
+var child_process_1 = require("child_process");
 var path_1 = require("path");
 var mongodb_1 = require("mongodb");
 var database_1 = require("./data/database");
 var worker;
 var driver;
 var db;
-var country = "us";
+var country = "uk";
+var real = "it";
 function start() {
     return __awaiter(this, void 0, void 0, function () {
         function start_vpn() {
             return __awaiter(this, void 0, void 0, function () {
-                var continue_;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
@@ -80,11 +81,11 @@ function start() {
                                     country: country
                                 }
                             });
-                            continue_ = false;
                             return [4 /*yield*/, new Promise(function (res) {
                                     worker.once("message", function (message) {
-                                        if (message === "start")
+                                        if (message === "start") {
                                             continue_ = true;
+                                        }
                                         else if (message === "refresh")
                                             continue_ = false;
                                         res();
@@ -92,39 +93,39 @@ function start() {
                                 })];
                         case 1:
                             _a.sent();
-                            if (!continue_) return [3 /*break*/, 3];
-                            return [4 /*yield*/, executor(account, accountDB)];
-                        case 2:
-                            _a.sent();
-                            return [3 /*break*/, 5];
-                        case 3: return [4 /*yield*/, start_vpn()];
-                        case 4:
-                            _a.sent();
-                            _a.label = 5;
-                        case 5: return [2 /*return*/];
+                            console.log(continue_);
+                            return [2 /*return*/];
                     }
                 });
             });
         }
-        var mongo, dbo, accountDB, account;
+        var continue_, accountDB, account;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, database_1.connect()];
+                case 0:
+                    continue_ = false;
+                    return [4 /*yield*/, start_vpn()];
                 case 1:
                     _a.sent();
-                    mongo = new mongodb_1.MongoClient("mongodb+srv://admin:admin@cluster0.vlznh.mongodb.net/userlist?retryWrites=true&w=majority");
-                    return [4 /*yield*/, mongo.connect()];
+                    return [4 /*yield*/, database_1.connect()];
                 case 2:
-                    dbo = _a.sent();
-                    db = dbo.db("kebotdb");
+                    _a.sent();
                     return [4 /*yield*/, database_1.findNotRegisterAccount()];
                 case 3:
                     accountDB = _a.sent();
                     console.log(accountDB);
                     account = accounts_1.createAccount();
-                    return [4 /*yield*/, start_vpn()];
+                    if (!continue_) return [3 /*break*/, 5];
+                    console.log("here");
+                    return [4 /*yield*/, executor(account, accountDB)];
                 case 4:
                     _a.sent();
+                    return [3 /*break*/, 7];
+                case 5: return [4 /*yield*/, start_vpn()];
+                case 6:
+                    _a.sent();
+                    _a.label = 7;
+                case 7:
                     process.exit();
                     return [2 /*return*/];
             }
@@ -133,13 +134,43 @@ function start() {
 }
 function executor(account, accountDB) {
     return __awaiter(this, void 0, void 0, function () {
-        var tmpElem, out, res, notDid_1;
+        function start_vpn() {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            worker = new worker_threads_1.Worker(path_1.join(__dirname, "thread/vpn_thread.js"), {
+                                workerData: {
+                                    country: real
+                                }
+                            });
+                            return [4 /*yield*/, new Promise(function (res) {
+                                    worker.once("message", function (message) {
+                                        if (message === "start") {
+                                            continue_ = true;
+                                        }
+                                        else if (message === "refresh")
+                                            continue_ = false;
+                                        res();
+                                    });
+                                })];
+                        case 1:
+                            _a.sent();
+                            console.log(continue_);
+                            return [2 /*return*/];
+                    }
+                });
+            });
+        }
+        var continue_, tmpElem, out, res, notDid_1, errore, count_1, elem;
         var _this = this;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    if (!accountDB) return [3 /*break*/, 37];
-                    if (!account.username) return [3 /*break*/, 37];
+                    continue_ = false;
+                    if (!accountDB) return [3 /*break*/, 50];
+                    if (!account.username) return [3 /*break*/, 50];
+                    console.log("here");
                     return [4 /*yield*/, new selenium_webdriver_1.Builder().forBrowser("chrome").build()];
                 case 1:
                     driver = _a.sent();
@@ -270,17 +301,81 @@ function executor(account, accountDB) {
                     if (!notDid_1)
                         console.log(account);
                     account.country = country;
-                    return [4 /*yield*/, database_1.addAccount(account, new mongodb_1.ObjectID(accountDB._id))];
+                    errore = false, count_1 = 200;
+                    _a.label = 35;
                 case 35:
+                    if (!true) return [3 /*break*/, 37];
+                    return [4 /*yield*/, driver.getCurrentUrl()];
+                case 36:
+                    if ((_a.sent()).includes("download"))
+                        return [3 /*break*/, 37];
+                    else
+                        count_1--;
+                    if (count_1 === 0) {
+                        errore = true;
+                        return [3 /*break*/, 37];
+                    }
+                    sleep(100);
+                    return [3 /*break*/, 35];
+                case 37:
+                    if (!!errore) return [3 /*break*/, 48];
+                    return [4 /*yield*/, database_1.addAccount(account, new mongodb_1.ObjectID(accountDB._id))];
+                case 38:
                     _a.sent();
                     sleep(3500);
-                    return [4 /*yield*/, driver.close()];
-                case 36:
+                    if (!(real !== country)) return [3 /*break*/, 48];
+                    return [4 /*yield*/, new Promise(function (res) {
+                            worker.on("exit", function () { return __awaiter(_this, void 0, void 0, function () {
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            child_process_1.execSync(path_1.join(__dirname, "../killvpn.sh"));
+                                            return [4 /*yield*/, start_vpn()];
+                                        case 1:
+                                            _a.sent();
+                                            console.log("VPN CHANGED");
+                                            res();
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            }); });
+                            worker.emit("exit");
+                        })];
+                case 39:
+                    _a.sent();
+                    sleep(10000);
+                    return [4 /*yield*/, driver.get("https://www.spotify.com/it/account/profile/")];
+                case 40:
+                    _a.sent();
+                    return [4 /*yield*/, driver.wait(selenium_webdriver_1.until.elementLocated(selenium_webdriver_1.By.id("country")), 50000)];
+                case 41:
+                    _a.sent();
+                    return [4 /*yield*/, driver.findElement(selenium_webdriver_1.By.id("country"))];
+                case 42:
+                    elem = _a.sent();
+                    return [4 /*yield*/, elem.sendKeys(real)];
+                case 43:
+                    _a.sent();
+                    return [4 /*yield*/, driver.findElement(selenium_webdriver_1.By.xpath('//*[@id="__next"]/div/div/div[2]/div[2]/div[2]/div/article/section/form/div/button'))];
+                case 44:
+                    elem = _a.sent();
+                    return [4 /*yield*/, elem.click()];
+                case 45:
+                    _a.sent();
+                    return [4 /*yield*/, driver.wait(selenium_webdriver_1.until.elementLocated(selenium_webdriver_1.By.xpath('//*[@id="__next"]/div/div/div[2]/div[2]/div[2]/div/section/div')), 10000)];
+                case 46:
+                    _a.sent();
+                    return [4 /*yield*/, database_1.setReal(new mongodb_1.ObjectID(accountDB._id), real)];
+                case 47:
+                    _a.sent();
+                    _a.label = 48;
+                case 48: return [4 /*yield*/, driver.close()];
+                case 49:
                     _a.sent();
                     if (worker)
                         worker.postMessage("exit");
-                    _a.label = 37;
-                case 37: return [2 /*return*/];
+                    _a.label = 50;
+                case 50: return [2 /*return*/];
             }
         });
     });

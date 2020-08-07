@@ -6,49 +6,57 @@ import { AntiCaptcha, INoCaptchaTaskProxyless, INoCaptchaTaskProxylessResult, IG
 import { exec, execSync, spawn } from "child_process";
 import { join } from "path";
 import { MongoClient, Db, ObjectID } from "mongodb";
-import { findNotRegisterAccount, connect, addAccount, account, accountSpotify } from "./data/database";
+import { findNotRegisterAccount, connect, addAccount, account, accountSpotify, setReal } from "./data/database";
+import { count } from "console";
 
 let worker: Worker;
 let driver: WebDriver;
 let db: Db;
-let country = "us";
+let country = "uk";
+let real = "it";
 async function start() {
+    let continue_ = false;
+
+    await start_vpn();
     await connect();
-    let mongo = new MongoClient("mongodb+srv://admin:admin@cluster0.vlznh.mongodb.net/userlist?retryWrites=true&w=majority")
-    let dbo = await mongo.connect();
-    db = dbo.db("kebotdb");
+    // let mongo = new MongoClient("mongodb+srv://admin:admin@cluster0.vlznh.mongodb.net/kebotdb?retryWrites=true&w=majority", {useUnifiedTopology: true})
+    // let dbo = await mongo.connect();
+    // db = dbo.db("kebotdb");
     let accountDB = await findNotRegisterAccount();
     console.log(accountDB);
     let account = createAccount();
-    await start_vpn();
     async function start_vpn() {
         worker = new Worker(join(__dirname, "thread/vpn_thread.js"), {
             workerData: {
                 country: country
             }
         });
-        let continue_ = false;
         await new Promise(res => {
             worker.once("message", (message) => {
-                if (message === "start")
+                if (message === "start") {
                     continue_ = true;
+                }
                 else if (message === "refresh")
                     continue_ = false;
                 res();
             })
         });
-        if (continue_) {
-            await executor(account, accountDB);
-        }else await start_vpn();
+        console.log(continue_);
     }
+    if (continue_) {
+        console.log("here");
+        await executor(account, accountDB);
+    } else await start_vpn();
     process.exit()
     //await executor(account, accountDB);
 }
 
 
 async function executor(account: accountSpotify, accountDB: account | undefined) {
+    let continue_: boolean = false;
     if (accountDB)
         if (account.username) {
+            console.log("here")
             driver = await new Builder().forBrowser("chrome").build();
             await driver.get("https://www.spotify.com/it/signup/");
             await driver.wait(until.elementLocated(structure.privacy));
@@ -75,7 +83,7 @@ async function executor(account: accountSpotify, accountDB: account | undefined)
             tmpElem = await driver.findElement(structure.privacy);
             await tmpElem.click();
             sleep(4000)
-            let out = setTimeout(async ()=>{
+            let out = setTimeout(async () => {
                 await driver.close();
                 process.exit();
             }, 120000);
@@ -105,12 +113,65 @@ async function executor(account: accountSpotify, accountDB: account | undefined)
             if (!notDid)
                 console.log(account);
             account.country = country;
-            await addAccount(account, new ObjectID(accountDB._id));
-            sleep(3500);
+            let errore = false, count = 200;
+            while (true) {
+                if ((await driver.getCurrentUrl()).includes("download"))
+                    break;
+                else
+                    count--;
+                if (count === 0) {
+                    errore = true;
+                    break;
+                }
+                sleep(100);
+            }
+            if (!errore) {
+                await addAccount(account, new ObjectID(accountDB._id));
+                sleep(3500);
+                if (real !== country) {
+                    await new Promise(res => {
+                        worker.on("exit", async () => {
+                            execSync(join(__dirname, "../killvpn.sh"));
+                            await start_vpn();
+                            console.log("VPN CHANGED")
+                            res();
+                        });
+                        worker.emit("exit");
+                    })
+                    sleep(10000);
+                    await driver.get("https://www.spotify.com/it/account/profile/");
+                    await driver.wait(until.elementLocated(By.id("country")), 50000);
+                    let elem = await driver.findElement(By.id("country"));
+                    await elem.sendKeys(real);
+                    elem = await driver.findElement(By.xpath('//*[@id="__next"]/div/div/div[2]/div[2]/div[2]/div/article/section/form/div/button'));
+                    await elem.click();
+                    await driver.wait(until.elementLocated(By.xpath('//*[@id="__next"]/div/div/div[2]/div[2]/div[2]/div/section/div')), 10000);
+                    await setReal(new ObjectID(accountDB._id), real);
+                }
+            }
             await driver.close();
             if (worker)
                 worker.postMessage("exit");
         }
+
+    async function start_vpn() {
+        worker = new Worker(join(__dirname, "thread/vpn_thread.js"), {
+            workerData: {
+                country: real
+            }
+        });
+        await new Promise(res => {
+            worker.once("message", (message) => {
+                if (message === "start") {
+                    continue_ = true;
+                }
+                else if (message === "refresh")
+                    continue_ = false;
+                res();
+            })
+        });
+        console.log(continue_);
+    }
 }
 
 start();

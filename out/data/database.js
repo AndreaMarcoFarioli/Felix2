@@ -36,7 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.findNotRegisterAccount = exports.inUseAccount = exports.addAccount = exports.connect = void 0;
+exports.findNotRegisterAccount = exports.setReal = exports.inUseAccount = exports.addAccount = exports.connect = void 0;
 var mongodb_1 = require("mongodb");
 var client = new mongodb_1.MongoClient("mongodb+srv://admin:admin@cluster0.vlznh.mongodb.net/userlist?retryWrites=true&w=majority", { useUnifiedTopology: true });
 var connected = false;
@@ -95,6 +95,21 @@ function inUseAccount(_id, inUse) {
     });
 }
 exports.inUseAccount = inUseAccount;
+function setReal(_id, real) {
+    return __awaiter(this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    if (!connected)
+                        return [2 /*return*/];
+                    return [4 /*yield*/, dbo.collection("accounts")
+                            .updateOne({ _id: _id }, { $set: { "subs.spotify.realCountry": real } })];
+                case 1: return [2 /*return*/, _a.sent()];
+            }
+        });
+    });
+}
+exports.setReal = setReal;
 function findNotRegisterAccount() {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {

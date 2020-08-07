@@ -2,7 +2,8 @@ npx tsc
 for (( c=0; c<10000000; c++ ))
 do
 	npm test
-	echo a | sudo -S killall openvpn
-	echo a | sudo -S killall chromedriver
+	echo Benzoni1930 | sudo -S killall openvpn
+	echo Benzoni1930 | sudo -S killall chromedriver
+	rm ~/Downloads/SpotifyInstaller*
 	sleep 5
 done

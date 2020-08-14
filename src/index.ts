@@ -6,7 +6,7 @@ import { AntiCaptcha, INoCaptchaTaskProxyless, INoCaptchaTaskProxylessResult, IG
 import { exec, execSync, spawn } from "child_process";
 import { join } from "path";
 import { MongoClient, Db, ObjectID } from "mongodb";
-import { findNotRegisterAccount, connect, addAccount, account, accountSpotify, setReal } from "./data/database";
+import { findNotRegisterAccount, connect, addAccount, account, accountSpotify, setReal, inUseAccount, alreadyExists } from "./data/database";
 import { count } from "console";
 
 let worker: Worker;
@@ -14,6 +14,7 @@ let driver: WebDriver;
 let db: Db;
 let country = "uk";
 let real = "it";
+let accountDB : account | undefined;
 async function start() {
     let continue_ = false;
 
@@ -22,7 +23,9 @@ async function start() {
     // let mongo = new MongoClient("mongodb+srv://admin:admin@cluster0.vlznh.mongodb.net/kebotdb?retryWrites=true&w=majority", {useUnifiedTopology: true})
     // let dbo = await mongo.connect();
     // db = dbo.db("kebotdb");
-    let accountDB = await findNotRegisterAccount();
+    accountDB = await findNotRegisterAccount();
+    if(accountDB)
+        console.log(await inUseAccount(new ObjectID(accountDB._id), true))
     console.log(accountDB);
     let account = createAccount();
     async function start_vpn() {
@@ -56,14 +59,34 @@ async function executor(account: accountSpotify, accountDB: account | undefined)
     let continue_: boolean = false;
     if (accountDB)
         if (account.username) {
-            console.log("here")
+            console.log("here");
             driver = await new Builder().forBrowser("chrome").build();
             await driver.get("https://www.spotify.com/it/signup/");
             await driver.wait(until.elementLocated(structure.privacy));
+            let b = By.xpath('//*[@id="onetrust-accept-btn-handler"]');
+            await new Promise(res=>{
+                driver.wait(until.elementLocated(b), 3000).then((e)=>{
+                    driver.wait(until.elementIsVisible(e), 3000).then(()=>{
+                        sleep(2000);
+                        e.click().then(res);
+                    }).catch(res);
+                }).catch(res);
+            });
             let tmpElem = await driver.findElement(structure.email);
             await tmpElem.sendKeys(accountDB.email);
             tmpElem = await driver.findElement(structure.cemail);
             await tmpElem.sendKeys(accountDB.email);
+            b = By.xpath('//*[@id="__next"]/main/div[2]/form/div[1]/div[2]');
+            await new Promise(res=>{
+                driver.wait(until.elementLocated(b), 3000).then((e)=>{
+                    driver.wait(until.elementIsVisible(e), 3000).then(()=>{
+                        alreadyExists(new ObjectID(accountDB._id)).then(()=>{
+                            console.log("Already Exists");3
+                            driver.close().then(()=>process.exit())
+                        });
+                    }).catch(res);
+                }).catch(res);
+            });
             tmpElem = await driver.findElement(structure.password);
             await tmpElem.sendKeys(account.password);
             tmpElem = await driver.findElement(structure.profile_name);
@@ -89,6 +112,7 @@ async function executor(account: accountSpotify, accountDB: account | undefined)
             }, 120000);
             let res = await captchaSolver();
             clearTimeout(out);
+            // let res = {solution:{gRecaptchaResponse:"ciao"}}
             //await driver.executeScript(`document.querySelector("iframe").remove()`);
             sleep(4000)
 
@@ -141,6 +165,15 @@ async function executor(account: accountSpotify, accountDB: account | undefined)
                     sleep(10000);
                     await driver.get("https://www.spotify.com/it/account/profile/");
                     await driver.wait(until.elementLocated(By.id("country")), 50000);
+                    b = By.xpath('//*[@id="onetrust-accept-btn-handler"]');
+                    await new Promise(res=>{
+                        driver.wait(until.elementLocated(b), 3000).then((e)=>{
+                            driver.wait(until.elementIsVisible(e), 3000).then(()=>{
+                                sleep(2000);
+                                e.click().then(res);
+                            }).catch(res);
+                        }).catch(res);
+                    });
                     let elem = await driver.findElement(By.id("country"));
                     await elem.sendKeys(real);
                     elem = await driver.findElement(By.xpath('//*[@id="__next"]/div/div/div[2]/div[2]/div[2]/div/article/section/form/div/button'));
@@ -179,7 +212,7 @@ start();
 
 async function captchaSolver() {
     console.log("start")
-    let a = new AntiCaptcha("fbc97aead89db25f4bee466c65e951fe");
+    let a = new AntiCaptcha("e8efed696ff4ba6d76dce1f442e777bd");
     let notSolved = false;
     let res = await new Promise<IGetTaskResultResponse<INoCaptchaTaskProxylessResult>>(async res => {
         let taskID = await a.createTask<INoCaptchaTaskProxyless>(captchaObjectSpotify);
@@ -198,6 +231,8 @@ function sleep(time: number) {
 }
 
 process.once("beforeExit", async () => {
+    if(accountDB)
+        console.log(await inUseAccount(new ObjectID(accountDB._id), false))
     await new Promise(res => {
         driver.close()
             .then(res)

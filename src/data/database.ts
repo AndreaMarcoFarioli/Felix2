@@ -4,10 +4,10 @@ import { type } from "os";
 const client = new MongoClient("mongodb+srv://admin:admin@cluster0.vlznh.mongodb.net/userlist?retryWrites=true&w=majority", { useUnifiedTopology: true });
 let connected = false;
 let dbo: Db;
-
+const db = "kebotest", collection = "accounts1";
 export async function connect() {
     await client.connect();
-    dbo = client.db("kebotdb");
+    dbo = client.db(db);
     connected = true;
 }
 
@@ -15,7 +15,7 @@ export async function addAccount(account: accountSpotify, _id: ObjectID) {
     if (!connected)
         return;
     return await
-        dbo.collection("accounts")
+        dbo.collection(collection)
             .updateOne({
                 _id: _id
             },
@@ -32,10 +32,10 @@ export async function inUseAccount(_id: ObjectID, inUse: boolean = true) {
     if (!connected)
         return;
     return await
-        dbo.collection("accounts")
+        dbo.collection(collection)
             .updateOne(
                 { _id: _id },
-                { $set: { inUse: inUse } }
+                { $set: { inUsed: inUse } }
             )
 }
 
@@ -43,18 +43,28 @@ export async function setReal(_id: ObjectID, real: string){
     if(!connected)
         return
     return await
-        dbo.collection("accounts")
+        dbo.collection(collection)
             .updateOne(
                 { _id: _id },
                 { $set: { "subs.spotify.realCountry": real } }
             )
 }
 
+export async function alreadyExists(_id: ObjectID){
+    if(!connected)
+        return
+    return dbo.collection(collection)
+                .updateOne(
+                    {_id: _id},
+                    { $set: {"subs.spotify.alreadyExists": true }}
+                )
+}
+
 export async function findNotRegisterAccount() {
     if (!connected)
         return;
     return <account>(await
-        dbo.collection("accounts")
+        dbo.collection(collection)
             .findOne({
                 $and: [
                     { activated: true },
@@ -62,6 +72,12 @@ export async function findNotRegisterAccount() {
                         $or: [
                             { subs: { $exists: false } },
                             { subs: { spotify: { $exists: false } } }
+                        ]
+                    },
+                    { 
+                        $or: [
+                            { inUsed: false },
+                            { inUsed: { $exists: false } }
                         ]
                     }
                 ]

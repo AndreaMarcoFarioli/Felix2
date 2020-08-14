@@ -36,11 +36,12 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.findNotRegisterAccount = exports.setReal = exports.inUseAccount = exports.addAccount = exports.connect = void 0;
+exports.findNotRegisterAccount = exports.alreadyExists = exports.setReal = exports.inUseAccount = exports.addAccount = exports.connect = void 0;
 var mongodb_1 = require("mongodb");
 var client = new mongodb_1.MongoClient("mongodb+srv://admin:admin@cluster0.vlznh.mongodb.net/userlist?retryWrites=true&w=majority", { useUnifiedTopology: true });
 var connected = false;
 var dbo;
+var db = "kebotest", collection = "accounts1";
 function connect() {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
@@ -48,7 +49,7 @@ function connect() {
                 case 0: return [4 /*yield*/, client.connect()];
                 case 1:
                     _a.sent();
-                    dbo = client.db("kebotdb");
+                    dbo = client.db(db);
                     connected = true;
                     return [2 /*return*/];
             }
@@ -63,7 +64,7 @@ function addAccount(account, _id) {
                 case 0:
                     if (!connected)
                         return [2 /*return*/];
-                    return [4 /*yield*/, dbo.collection("accounts")
+                    return [4 /*yield*/, dbo.collection(collection)
                             .updateOne({
                             _id: _id
                         }, {
@@ -87,8 +88,8 @@ function inUseAccount(_id, inUse) {
                 case 0:
                     if (!connected)
                         return [2 /*return*/];
-                    return [4 /*yield*/, dbo.collection("accounts")
-                            .updateOne({ _id: _id }, { $set: { inUse: inUse } })];
+                    return [4 /*yield*/, dbo.collection(collection)
+                            .updateOne({ _id: _id }, { $set: { inUsed: inUse } })];
                 case 1: return [2 /*return*/, _a.sent()];
             }
         });
@@ -102,7 +103,7 @@ function setReal(_id, real) {
                 case 0:
                     if (!connected)
                         return [2 /*return*/];
-                    return [4 /*yield*/, dbo.collection("accounts")
+                    return [4 /*yield*/, dbo.collection(collection)
                             .updateOne({ _id: _id }, { $set: { "subs.spotify.realCountry": real } })];
                 case 1: return [2 /*return*/, _a.sent()];
             }
@@ -110,6 +111,17 @@ function setReal(_id, real) {
     });
 }
 exports.setReal = setReal;
+function alreadyExists(_id) {
+    return __awaiter(this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            if (!connected)
+                return [2 /*return*/];
+            return [2 /*return*/, dbo.collection(collection)
+                    .updateOne({ _id: _id }, { $set: { "subs.spotify.alreadyExists": true } })];
+        });
+    });
+}
+exports.alreadyExists = alreadyExists;
 function findNotRegisterAccount() {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
@@ -117,7 +129,7 @@ function findNotRegisterAccount() {
                 case 0:
                     if (!connected)
                         return [2 /*return*/];
-                    return [4 /*yield*/, dbo.collection("accounts")
+                    return [4 /*yield*/, dbo.collection(collection)
                             .findOne({
                             $and: [
                                 { activated: true },
@@ -125,6 +137,12 @@ function findNotRegisterAccount() {
                                     $or: [
                                         { subs: { $exists: false } },
                                         { subs: { spotify: { $exists: false } } }
+                                    ]
+                                },
+                                {
+                                    $or: [
+                                        { inUsed: false },
+                                        { inUsed: { $exists: false } }
                                     ]
                                 }
                             ]

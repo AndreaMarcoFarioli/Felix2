@@ -12,7 +12,7 @@ import { count } from "console";
 let worker: Worker;
 let driver: WebDriver;
 let db: Db;
-let country = "uk";
+let country = "za";
 let real = "it";
 let accountDB : account | undefined;
 async function start() {
@@ -57,6 +57,7 @@ async function start() {
 
 async function executor(account: accountSpotify, accountDB: account | undefined) {
     let continue_: boolean = false;
+    let exit = 0;
     if (accountDB)
         if (account.username) {
             console.log("here");
@@ -81,7 +82,7 @@ async function executor(account: accountSpotify, accountDB: account | undefined)
                 driver.wait(until.elementLocated(b), 3000).then((e)=>{
                     driver.wait(until.elementIsVisible(e), 3000).then(()=>{
                         alreadyExists(new ObjectID(accountDB._id)).then(()=>{
-                            console.log("Already Exists");3
+                            console.log("Already Exists");
                             driver.close().then(()=>process.exit())
                         });
                     }).catch(res);
@@ -92,6 +93,15 @@ async function executor(account: accountSpotify, accountDB: account | undefined)
             tmpElem = await driver.findElement(structure.profile_name);
             await tmpElem.sendKeys(account.username);
             tmpElem = await driver.findElement(structure.year);
+            b = By.xpath('//*[@id="onetrust-accept-btn-handler"]');
+            await new Promise(res=>{
+                driver.wait(until.elementLocated(b), 3000).then((e)=>{
+                    driver.wait(until.elementIsVisible(e), 3000).then(()=>{
+                        sleep(2000);
+                        e.click().then(res);
+                    }).catch(res);
+                }).catch(res);
+            });
             await tmpElem.sendKeys(account.birthday.year);
             tmpElem = await driver.findElement(structure.month);
             await tmpElem.sendKeys(account.birthday.month);
@@ -108,14 +118,22 @@ async function executor(account: accountSpotify, accountDB: account | undefined)
             sleep(4000)
             let out = setTimeout(async () => {
                 await driver.close();
-                process.exit();
+                process.exit(1);
             }, 120000);
             let res = await captchaSolver();
             clearTimeout(out);
             // let res = {solution:{gRecaptchaResponse:"ciao"}}
             //await driver.executeScript(`document.querySelector("iframe").remove()`);
             sleep(4000)
-
+            b = By.xpath('//*[@id="onetrust-accept-btn-handler"]');
+            await new Promise(res=>{
+                driver.wait(until.elementLocated(b), 3000).then((e)=>{
+                    driver.wait(until.elementIsVisible(e), 3000).then(()=>{
+                        sleep(2000);
+                        e.click().then(res);
+                    }).catch(res);
+                }).catch(res);
+            });
             tmpElem = await driver.findElement(structure.captcha.recaptcha_response);
             await driver.executeScript(`arguments[0].innerHTML = arguments[1]`, tmpElem, res.solution.gRecaptchaResponse);
             tmpElem = await driver.findElement(By.css('[name=\'recaptchaV2\']'));
@@ -185,6 +203,7 @@ async function executor(account: accountSpotify, accountDB: account | undefined)
             await driver.close();
             if (worker)
                 worker.postMessage("exit");
+            process.exit(exit)
         }
 
     async function start_vpn() {

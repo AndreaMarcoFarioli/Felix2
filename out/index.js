@@ -67,7 +67,7 @@ var database_1 = require("./data/database");
 var worker;
 var driver;
 var db;
-var country = "uk";
+var country = "za";
 var real = "it";
 var accountDB;
 function start() {
@@ -173,14 +173,15 @@ function executor(account, accountDB) {
                 });
             });
         }
-        var continue_, b_1, tmpElem, out, res, notDid_1, errore, count_1, elem;
+        var continue_, exit, b_1, tmpElem, out, res, notDid_1, errore, count_1, elem;
         var _this = this;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     continue_ = false;
-                    if (!accountDB) return [3 /*break*/, 53];
-                    if (!account.username) return [3 /*break*/, 53];
+                    exit = 0;
+                    if (!accountDB) return [3 /*break*/, 55];
+                    if (!account.username) return [3 /*break*/, 55];
                     console.log("here");
                     return [4 /*yield*/, new selenium_webdriver_1.Builder().forBrowser("chrome").build()];
                 case 1:
@@ -220,7 +221,6 @@ function executor(account, accountDB) {
                                 driver.wait(selenium_webdriver_1.until.elementIsVisible(e), 3000).then(function () {
                                     database_1.alreadyExists(new mongodb_1.ObjectID(accountDB._id)).then(function () {
                                         console.log("Already Exists");
-                                        3;
                                         driver.close().then(function () { return process.exit(); });
                                     });
                                 }).catch(res);
@@ -243,44 +243,55 @@ function executor(account, accountDB) {
                     return [4 /*yield*/, driver.findElement(structure_1.default.year)];
                 case 14:
                     tmpElem = _a.sent();
-                    return [4 /*yield*/, tmpElem.sendKeys(account.birthday.year)];
+                    b_1 = selenium_webdriver_1.By.xpath('//*[@id="onetrust-accept-btn-handler"]');
+                    return [4 /*yield*/, new Promise(function (res) {
+                            driver.wait(selenium_webdriver_1.until.elementLocated(b_1), 3000).then(function (e) {
+                                driver.wait(selenium_webdriver_1.until.elementIsVisible(e), 3000).then(function () {
+                                    sleep(2000);
+                                    e.click().then(res);
+                                }).catch(res);
+                            }).catch(res);
+                        })];
                 case 15:
                     _a.sent();
-                    return [4 /*yield*/, driver.findElement(structure_1.default.month)];
+                    return [4 /*yield*/, tmpElem.sendKeys(account.birthday.year)];
                 case 16:
+                    _a.sent();
+                    return [4 /*yield*/, driver.findElement(structure_1.default.month)];
+                case 17:
                     tmpElem = _a.sent();
                     return [4 /*yield*/, tmpElem.sendKeys(account.birthday.month)];
-                case 17:
+                case 18:
                     _a.sent();
                     return [4 /*yield*/, driver.findElement(structure_1.default.day)];
-                case 18:
+                case 19:
                     tmpElem = _a.sent();
                     return [4 /*yield*/, tmpElem.sendKeys(account.birthday.day)];
-                case 19:
+                case 20:
                     _a.sent();
                     return [4 /*yield*/, driver.findElement(structure_1.default.genders[account.gender])];
-                case 20:
+                case 21:
                     tmpElem = _a.sent();
                     return [4 /*yield*/, tmpElem.click()];
-                case 21:
+                case 22:
                     _a.sent();
                     return [4 /*yield*/, driver.findElement(structure_1.default.newsletter)];
-                case 22:
+                case 23:
                     tmpElem = _a.sent();
                     return [4 /*yield*/, tmpElem.click()];
-                case 23:
+                case 24:
                     _a.sent();
                     return [4 /*yield*/, driver.findElement(structure_1.default.share_data)];
-                case 24:
+                case 25:
                     tmpElem = _a.sent();
                     return [4 /*yield*/, tmpElem.click()];
-                case 25:
+                case 26:
                     _a.sent();
                     return [4 /*yield*/, driver.findElement(structure_1.default.privacy)];
-                case 26:
+                case 27:
                     tmpElem = _a.sent();
                     return [4 /*yield*/, tmpElem.click()];
-                case 27:
+                case 28:
                     _a.sent();
                     sleep(4000);
                     out = setTimeout(function () { return __awaiter(_this, void 0, void 0, function () {
@@ -289,39 +300,50 @@ function executor(account, accountDB) {
                                 case 0: return [4 /*yield*/, driver.close()];
                                 case 1:
                                     _a.sent();
-                                    process.exit();
+                                    process.exit(1);
                                     return [2 /*return*/];
                             }
                         });
                     }); }, 120000);
                     return [4 /*yield*/, captchaSolver()];
-                case 28:
+                case 29:
                     res = _a.sent();
                     clearTimeout(out);
                     // let res = {solution:{gRecaptchaResponse:"ciao"}}
                     //await driver.executeScript(`document.querySelector("iframe").remove()`);
                     sleep(4000);
-                    return [4 /*yield*/, driver.findElement(structure_1.default.captcha.recaptcha_response)];
-                case 29:
-                    tmpElem = _a.sent();
-                    return [4 /*yield*/, driver.executeScript("arguments[0].innerHTML = arguments[1]", tmpElem, res.solution.gRecaptchaResponse)];
+                    b_1 = selenium_webdriver_1.By.xpath('//*[@id="onetrust-accept-btn-handler"]');
+                    return [4 /*yield*/, new Promise(function (res) {
+                            driver.wait(selenium_webdriver_1.until.elementLocated(b_1), 3000).then(function (e) {
+                                driver.wait(selenium_webdriver_1.until.elementIsVisible(e), 3000).then(function () {
+                                    sleep(2000);
+                                    e.click().then(res);
+                                }).catch(res);
+                            }).catch(res);
+                        })];
                 case 30:
                     _a.sent();
-                    return [4 /*yield*/, driver.findElement(selenium_webdriver_1.By.css('[name=\'recaptchaV2\']'))];
+                    return [4 /*yield*/, driver.findElement(structure_1.default.captcha.recaptcha_response)];
                 case 31:
                     tmpElem = _a.sent();
-                    return [4 /*yield*/, driver.executeScript("arguments[0].removeAttribute(\"hidden\")", tmpElem)];
+                    return [4 /*yield*/, driver.executeScript("arguments[0].innerHTML = arguments[1]", tmpElem, res.solution.gRecaptchaResponse)];
                 case 32:
+                    _a.sent();
+                    return [4 /*yield*/, driver.findElement(selenium_webdriver_1.By.css('[name=\'recaptchaV2\']'))];
+                case 33:
+                    tmpElem = _a.sent();
+                    return [4 /*yield*/, driver.executeScript("arguments[0].removeAttribute(\"hidden\")", tmpElem)];
+                case 34:
                     _a.sent();
                     sleep(3000);
                     return [4 /*yield*/, tmpElem.sendKeys(res.solution.gRecaptchaResponse)];
-                case 33:
+                case 35:
                     _a.sent();
                     return [4 /*yield*/, driver.findElement(structure_1.default.submit)];
-                case 34:
+                case 36:
                     tmpElem = _a.sent();
                     return [4 /*yield*/, tmpElem.click()];
-                case 35:
+                case 37:
                     _a.sent();
                     notDid_1 = false;
                     return [4 /*yield*/, new Promise(function (res) {
@@ -333,34 +355,34 @@ function executor(account, accountDB) {
                                 res();
                             });
                         })];
-                case 36:
+                case 38:
                     _a.sent();
                     if (!notDid_1)
                         console.log(account);
                     account.country = country;
                     errore = false, count_1 = 200;
-                    _a.label = 37;
-                case 37:
-                    if (!true) return [3 /*break*/, 39];
+                    _a.label = 39;
+                case 39:
+                    if (!true) return [3 /*break*/, 41];
                     return [4 /*yield*/, driver.getCurrentUrl()];
-                case 38:
+                case 40:
                     if ((_a.sent()).includes("download"))
-                        return [3 /*break*/, 39];
+                        return [3 /*break*/, 41];
                     else
                         count_1--;
                     if (count_1 === 0) {
                         errore = true;
-                        return [3 /*break*/, 39];
+                        return [3 /*break*/, 41];
                     }
                     sleep(100);
-                    return [3 /*break*/, 37];
-                case 39:
-                    if (!!errore) return [3 /*break*/, 51];
+                    return [3 /*break*/, 39];
+                case 41:
+                    if (!!errore) return [3 /*break*/, 53];
                     return [4 /*yield*/, database_1.addAccount(account, new mongodb_1.ObjectID(accountDB._id))];
-                case 40:
+                case 42:
                     _a.sent();
                     sleep(3500);
-                    if (!(real !== country)) return [3 /*break*/, 51];
+                    if (!(real !== country)) return [3 /*break*/, 53];
                     return [4 /*yield*/, new Promise(function (res) {
                             worker.on("exit", function () { return __awaiter(_this, void 0, void 0, function () {
                                 return __generator(this, function (_a) {
@@ -378,14 +400,14 @@ function executor(account, accountDB) {
                             }); });
                             worker.emit("exit");
                         })];
-                case 41:
+                case 43:
                     _a.sent();
                     sleep(10000);
                     return [4 /*yield*/, driver.get("https://www.spotify.com/it/account/profile/")];
-                case 42:
+                case 44:
                     _a.sent();
                     return [4 /*yield*/, driver.wait(selenium_webdriver_1.until.elementLocated(selenium_webdriver_1.By.id("country")), 50000)];
-                case 43:
+                case 45:
                     _a.sent();
                     b_1 = selenium_webdriver_1.By.xpath('//*[@id="onetrust-accept-btn-handler"]');
                     return [4 /*yield*/, new Promise(function (res) {
@@ -396,34 +418,35 @@ function executor(account, accountDB) {
                                 }).catch(res);
                             }).catch(res);
                         })];
-                case 44:
-                    _a.sent();
-                    return [4 /*yield*/, driver.findElement(selenium_webdriver_1.By.id("country"))];
-                case 45:
-                    elem = _a.sent();
-                    return [4 /*yield*/, elem.sendKeys(real)];
                 case 46:
                     _a.sent();
-                    return [4 /*yield*/, driver.findElement(selenium_webdriver_1.By.xpath('//*[@id="__next"]/div/div/div[2]/div[2]/div[2]/div/article/section/form/div/button'))];
+                    return [4 /*yield*/, driver.findElement(selenium_webdriver_1.By.id("country"))];
                 case 47:
                     elem = _a.sent();
-                    return [4 /*yield*/, elem.click()];
+                    return [4 /*yield*/, elem.sendKeys(real)];
                 case 48:
                     _a.sent();
-                    return [4 /*yield*/, driver.wait(selenium_webdriver_1.until.elementLocated(selenium_webdriver_1.By.xpath('//*[@id="__next"]/div/div/div[2]/div[2]/div[2]/div/section/div')), 10000)];
+                    return [4 /*yield*/, driver.findElement(selenium_webdriver_1.By.xpath('//*[@id="__next"]/div/div/div[2]/div[2]/div[2]/div/article/section/form/div/button'))];
                 case 49:
-                    _a.sent();
-                    return [4 /*yield*/, database_1.setReal(new mongodb_1.ObjectID(accountDB._id), real)];
+                    elem = _a.sent();
+                    return [4 /*yield*/, elem.click()];
                 case 50:
                     _a.sent();
-                    _a.label = 51;
-                case 51: return [4 /*yield*/, driver.close()];
+                    return [4 /*yield*/, driver.wait(selenium_webdriver_1.until.elementLocated(selenium_webdriver_1.By.xpath('//*[@id="__next"]/div/div/div[2]/div[2]/div[2]/div/section/div')), 10000)];
+                case 51:
+                    _a.sent();
+                    return [4 /*yield*/, database_1.setReal(new mongodb_1.ObjectID(accountDB._id), real)];
                 case 52:
+                    _a.sent();
+                    _a.label = 53;
+                case 53: return [4 /*yield*/, driver.close()];
+                case 54:
                     _a.sent();
                     if (worker)
                         worker.postMessage("exit");
-                    _a.label = 53;
-                case 53: return [2 /*return*/];
+                    process.exit(exit);
+                    _a.label = 55;
+                case 55: return [2 /*return*/];
             }
         });
     });
